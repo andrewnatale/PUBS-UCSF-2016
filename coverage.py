@@ -20,4 +20,13 @@ for barcode in allele_dict:
         #print str(position) + ' ' + str(codon) + ' ' + str(aa)
         translated_dict[barcode] = (position, aa, code_val)
 
-print translated_dict
+#print translated_dict
+#for stuff in translated_dict.values():
+#    print stuff[0]
+for code in sorted(translated_dict.values()):
+    print code
+
+#
+#
+#
+#
