@@ -11,12 +11,13 @@ amino_to_number = pic.load(open('../aminotonumber.pkl','rb'))
 
 translated_dict = {}
 for barcode in allele_dict:
-    print barcode
+    #print barcode
     position, codon = allele_dict[barcode]
     if codon != 'WT':
         codon = codon.replace('T', 'U')
         aa = translate[codon]
-        print str(position) + ' ' + str(codon) + ' ' + str(aa)
-        translated_dict[barcode] = (position, aa)
+        code_val = amino_to_number[aa]
+        #print str(position) + ' ' + str(codon) + ' ' + str(aa)
+        translated_dict[barcode] = (position, aa, code_val)
 
 print translated_dict
