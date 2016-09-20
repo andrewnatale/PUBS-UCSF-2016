@@ -17,3 +17,6 @@ for barcode in allele_dict:
         codon = codon.replace('T', 'U')
         aa = translate[codon]
         print str(position) + ' ' + str(codon) + ' ' + str(aa)
+        translated_dict[barcode] = (position, aa)
+
+print translated_dict
