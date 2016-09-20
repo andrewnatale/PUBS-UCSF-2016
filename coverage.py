@@ -18,7 +18,11 @@ for barcode in allele_dict:
         aa = translate[codon]
         code_val = amino_to_number[aa]
         #print str(position) + ' ' + str(codon) + ' ' + str(aa)
-        translated_dict[barcode] = (position, aa, code_val)
+        translated_dict[barcode] = (position, code_val, aa)
 
 frequency_data = Counter(translated_dict.values())
-print frequency_data
+#print frequency_data
+position = None
+for key in sorted(frequency_data):
+    if position == None:
+        position = key[0]
