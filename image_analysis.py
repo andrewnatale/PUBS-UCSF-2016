@@ -3,10 +3,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from skimage import data, io, filters, img_as_float, exposure, transform
+from skimage import data, io, filters, img_as_float, exposure, transform, measure
 from skimage.morphology import disk, watershed, opening, dilation, erosion, closing, white_tophat, black_tophat
-from skimage.segmentation import slic, join_segmentations
-from skimage.feature import canny
+#from skimage.segmentation import slic, join_segmentations
+#from skimage.feature import canny
 from scipy import fftpack
 from scipy import ndimage as ndi
 from sys import argv
@@ -24,14 +24,15 @@ def segment_image(image):
     binary = np.zeros_like(gaussian_filtered)
     binary[gaussian_filtered < thresh] = 1
     filled = ndi.morphology.binary_fill_holes(binary)
-    label_objects, nb_labels = ndi.label(filled)
-    print label_objects
-    print nb_labels
-    sizes = np.bincount(label_objects.ravel())
-    mask_sizes = sizes > 100
-    mask_sizes[0] = 0
-    cleaned = mask_sizes[label_objects]
-    return (image, binary, cleaned)
+    label_objects = measure.label(filled)
+    #sizes = np.bincount(label_objects.ravel())
+    #mask_sizes = sizes > 100
+    #mask_sizes[0] = 0
+    #cleaned = mask_sizes[label_objects]
+    for region in measure.regionprops(label_objects):
+        print region.area
+        print region.perimeter
+    return (image, binary, label_objects)
 
 
 #mask = np.zeros_like(image)
