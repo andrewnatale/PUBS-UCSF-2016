@@ -63,6 +63,8 @@ relative_fitness = {}
 for allele in allele_slopes:
     relative_fitness[allele] = allele_slopes[allele] / wt_slopes
 
+# compare fitness
+
 #for allele in relative_fitness:
 #    print allele, relative_fitness[allele]
 
