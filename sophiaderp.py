@@ -26,7 +26,7 @@ def segment_image(photo_matrix, background_threshold, foreground_threshold):
 
 segment_image(photo_matrix, 0.2,0.7 )
 
-np.ma.masked_where(photo_matrix > 0.2,photo_matrix)
+#np.ma.masked_where(photo_matrix > 0.2,photo_matrix)
 
 
 plt.imshow(photo_file, cmap = plt.cm.gray)
