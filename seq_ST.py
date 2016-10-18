@@ -8,23 +8,24 @@ import seaborn
 import matplotlib.pyplot as plt
 import pickle as pkl
 
-f = open('barcode_counts_retry.pkl', 'rb')
-dict = pkl.load(f)
+with open('barcode_counts_retry.pkl', 'rb') as data_file:
+ data = pkl.load(data_file)
 
-other = open('allele_dic_with_WT.pkl', 'r')
-otherdict = pkl.load(other)
+with open('allele_dic_with_WT.pkl', 'r') as allele_map_file:
+ allele_map = pkl.load(allele_map_file)
 
 wt_barcodes = []
-for key, value in dict.iteritems():
-    if 'WT' in value:
+for key, value in allele_map.iteritems():
+    if value[1] == 'WT':
         wt_barcodes.append(key)
 
+wt_counts = {}
+for barcode in wt_barcodes:
+    wt_counts[barcode] = data[barcode]
 
-for bc in wt_barcodes:
-    
-
+print np.sum(np.array(wt_counts.values()), axis=0)
 '''
-for key, value in dict.iteritems():    
+for key, value in dict.iteritems():
     #day 1
     a = value[0]
     b = value[1]
@@ -42,7 +43,7 @@ for key, value in dict.iteritems():
     x = [0, 1, 2]
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, avg)
     rsquared = r_value**2
-#    
+#
 #handle = open('fastq_test', 'rU')
 #records = list(SeqIO.parse(handle, 'fastq'))
 #
@@ -68,6 +69,6 @@ for key, value in dict.iteritems():
 #    x = [0, 1, 2]
 #    slope, intercept, r_value, p_value, std_err = stats.linregress(x, avg)
 #    rsquared = r_value**2
-#    
 #
-   ''' 
+#
+   '''
