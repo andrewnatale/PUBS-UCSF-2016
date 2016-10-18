@@ -59,12 +59,23 @@ for allele in allele_slopes:
 
 wt_slopes = wt_slopes / float(wt_count)
 
+relative_fitness = {}
+for allele in allele_slopes:
+    relative_fitness[allele] = allele_slopes[allele] / wt_slopes
+
+#for allele in relative_fitness:
+#    print allele, relative_fitness[allele]
+
+print 'sum of counts per sample:'
 print np.sum(np.array(data.values()), axis=0)
+print 'after normalization:'
 print np.sum(np.array(allele_counts.values()), axis=0)
+print 'max and min slopes per sample:'
 print np.amax(np.array(allele_slopes.values()), axis=0)
 print np.amin(np.array(allele_slopes.values()), axis=0)
-print wt_slopes
-
+print 'max and min after normalization to avg wt slope'
+print np.amax(np.array(relative_fitness.values()), axis=0)
+print np.amin(np.array(relative_fitness.values()), axis=0)
 '''
 for key, value in dict.iteritems():
     #day 1
