@@ -1,29 +1,70 @@
-from Bio import *
-from Bio import SeqIO
-import scipy
+#from Bio import *
+#from Bio import SeqIO
+#import scipy
 from scipy import stats
 import numpy as np
-import numpy
-import seaborn
-import matplotlib.pyplot as plt
+#import numpy
+#import seaborn
+#import matplotlib.pyplot as plt
 import pickle as pkl
+import sys
+from collections import Counter
 
-with open('barcode_counts_retry.pkl', 'rb') as data_file:
- data = pkl.load(data_file)
+# open up pickle file with data
+with open(sys.argv[1], 'rb') as data_file:
+    data = pkl.load(data_file)
 
+# open pickle file containing map of barcodes to alleles
 with open('allele_dic_with_WT.pkl', 'r') as allele_map_file:
- allele_map = pkl.load(allele_map_file)
+    allele_map = pkl.load(allele_map_file)
 
-wt_barcodes = []
-for key, value in allele_map.iteritems():
-    if value[1] == 'WT':
-        wt_barcodes.append(key)
+# open pickle file with codon to amino acid translations
+with open('translate.pkl', 'r') as translation_file:
+    translation = pkl.load(translation_file)
 
-wt_counts = {}
-for barcode in wt_barcodes:
-    wt_counts[barcode] = data[barcode]
+# get a list containing each (allele, pos#) tuple once
+allele_list = sorted(Counter(allele_map.values()).keys())
+# use the list to create 2 new empty dictionaries
+allele_counts = dict(zip(allele_list, np.zeros((len(allele_list), 9))))
+allele_slopes = dict(zip(allele_list, np.zeros((len(allele_list), 3))))
 
-print np.sum(np.array(wt_counts.values()), axis=0)
+# sum up all barcodes that point to the same allele
+for barcode in allele_map:
+    allele_counts[allele_map[barcode]] += data[barcode]
+
+# normalize to total reads per sample
+for n in range(0,9):
+    sample_sum = np.sum(np.array([data[i][n] for i in data]))
+    for allele in allele_counts:
+        allele_counts[allele][n] = allele_counts[allele][n] / sample_sum
+
+# x vals (# of generations) for slope calculations
+time_points = [0.0, 1.74, 3.71, 0, 1.75, 3.37, 0., 2., 4.]
+
+# calculate slopes for every allele for each experiment
+for n in range(0,3):
+    for allele in allele_slopes:
+        yvals = allele_counts[allele][(n*3):(n*3+3)]
+        xvals = time_points[(n*3):(n*3+3)]
+        line = stats.linregress(xvals, yvals)
+        allele_slopes[allele][n] = line[0]
+
+# get avg wt slope for each experiment
+wt_slopes = np.zeros((1,3))
+wt_count = 0
+for allele in allele_slopes:
+    if allele[1] == 'WT':
+        wt_slopes += allele_slopes[allele]
+        wt_count += 1
+
+wt_slopes = wt_slopes / float(wt_count)
+
+print np.sum(np.array(data.values()), axis=0)
+print np.sum(np.array(allele_counts.values()), axis=0)
+print np.amax(np.array(allele_slopes.values()), axis=0)
+print np.amin(np.array(allele_slopes.values()), axis=0)
+print wt_slopes
+
 '''
 for key, value in dict.iteritems():
     #day 1
