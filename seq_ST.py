@@ -41,7 +41,7 @@ for n in range(0,9):
 # x vals (# of generations) for slope calculations
 time_points = [0.0, 1.74, 3.71, 0, 1.75, 3.37, 0., 2., 4.]
 
-# calculate slopes for every allele for each experiment
+# calculate slope for every allele for each experiment
 for n in range(0,3):
     for allele in allele_slopes:
         yvals = allele_counts[allele][(n*3):(n*3+3)]
