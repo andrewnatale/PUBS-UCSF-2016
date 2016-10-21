@@ -79,21 +79,6 @@ def plot_hmap(data, row_labels, column_labels):
     plt.xticks(rotation=90)
     plt.show()
 
-# average of two experiments
-#plot_hmap(np.mean(fitness_array[2:4,:,:], axis=0),sequence_labels,mutation_labels)
-
-# fitness difference between experimental and control conditions
-#plot_hmap(np.mean(fitness_array[2:4,:,:], axis=0) - fitness_array[4,:,:],sequence_labels,mutation_labels)
-
-# control
-#plot_hmap(fitness_array[3,:,:],sequence_labels,mutation_labels)
-
-# mask which shows where we have no data
-#plot_hmap(fitness_array[0,:,:],sequence_labels,mutation_labels)
-
-# mask which shows which positions are wt
-#plot_hmap(fitness_array[1,:,:],sequence_labels,mutation_labels)
-
 # takes a 2D array
 def normalize_to_mean_stop(fitness_array):
     # get max stop codon values for this replicate
@@ -123,9 +108,26 @@ def normalize_info_content(fitness_array):
           / np.sum(fitness_array[:,i])
     return fitness_array
 
+# average of two experiments
+#plot_hmap(np.mean(fitness_array[2:4,:,:], axis=0),sequence_labels,mutation_labels)
+
+# fitness difference between experimental and control conditions
+#plot_hmap(np.mean(fitness_array[2:4,:,:], axis=0) - fitness_array[4,:,:],sequence_labels,mutation_labels)
+
+# control
+#plot_hmap(fitness_array[3,:,:],sequence_labels,mutation_labels)
+
+# mask which shows where we have no data
+#plot_hmap(fitness_array[0,:,:],sequence_labels,mutation_labels)
+
+# mask which shows which positions are wt
+#plot_hmap(fitness_array[1,:,:],sequence_labels,mutation_labels)
+
 # try normalization
 norm = normalize_info_content(normalize_to_max_stop(np.mean(fitness_array[2:4,:,:], axis=0)))
 plot_hmap(norm,sequence_labels,mutation_labels)
+
+
 """
 # normalization types
 # None: don't do any normalization, results in
