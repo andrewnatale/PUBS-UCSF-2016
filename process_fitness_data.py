@@ -11,6 +11,7 @@ import pandas as pd
 with open('fitness_scores1.pkl', 'rb') as fitness_scores_file:
     fitness_scores = pkl.load(fitness_scores_file)
 
+# load up ubiqitin monomer rosetta ddg data
 ddg_data = pd.read_table('uby_1ubq.tsv')
 ddg_dict = {}
 for index, row in ddg_data.iterrows():
@@ -86,19 +87,19 @@ for value in sorted(aminotonumber.values()):
             mutation_labels.append(key)
 #print mutation_labels
 
-def plot_hmap(data, row_labels, column_labels, _min=None, _max=None):
+def plot_hmap(data, row_labels, column_labels, min_=None, max_=None, cmap_=None):
     sns.set(font_scale=1.2)
     grid_kws = {"height_ratios": (.9, .05), "hspace": .2}
     f, (ax, cbar_ax) = plt.subplots(2, gridspec_kw=grid_kws)
     ax = sns.heatmap(data, ax=ax,
                      linewidths=0.5,
-                     #cmap='Blues',
+                     cmap=cmap_,
                      cbar_ax=cbar_ax,
                      cbar_kws={"orientation": "horizontal"},
                      xticklabels=row_labels,
                      yticklabels=column_labels,
-                     vmin=_min,
-                     vmax=_max)
+                     vmin=min_,
+                     vmax=max_)
     plt.sca(ax)
     plt.yticks(rotation=0)
     plt.xticks(rotation=90)
@@ -138,38 +139,116 @@ def normalize_info_content(fitness_array):
           / np.sum(fitness_array[:,i])
     return fitness_array
 
-# histogram of stop codon fitness scores, day1, day2, ctrl
-#plt.hist(fitness_array[[data_sets['day1'],data_sets['day2'],data_sets['ctrl']], aminotonumber['STOP'], :].flatten(), bins=20)
-#plt.show()
+def compare_hist(flat_array1, flat_array2):
+    fig = plt.figure()
+    a=fig.add_subplot(1,2,1)
+    hist = plt.hist(flat_array1, bins = 15)
+    a.set_title('p-fluorophenylalanine')
+    a=fig.add_subplot(1,2,2)
+    hist = plt.hist(flat_array2, bins = 15)
+    a.set_title('control')
+    plt.show()
+
+def pssm_out(data, sequence_labels, mutation_labels, identifier, out_file):
+    # open a file for writing
+    with open(out_file, 'w') as pssm_file:
+        # put an identifier on the first line
+        pssm_file.write('ID %s\n' % identifier)
+        # write position values
+        pssm_file.write('P0 ')
+        for elem in mutation_labels:
+            pssm_file.write('%s ' % elem)
+        pssm_file.write('\n')
+        # write data for each position on a line
+        # start by writing the position labels
+        position_count = 0
+        for i in sequence_labels:
+            pssm_file.write('%s ' % i[1:])
+            for j in data[:,position_count]:
+                pssm_file.write('%s ' % str(j*20))
+            pssm_file.write('\n')
+            position_count += 1
+        # write footer
+        pssm_file.write('XX\n')
+        pssm_file.write('//\n')
+
+
+
+# ******************
+# raw fitness scores
+# ******************
+
+# average of perturbation experiments
+#avg_perturb = np.mean(fitness_array[[data_sets['day1'],data_sets['day2']],:,:], axis=0)
+#plot_hmap(avg_perturb, sequence_labels, mutation_labels)
+
+# control experiment
+#plot_hmap(fitness_array[data_sets['ctrl'],:,:], sequence_labels, mutation_labels)
+
+
+
+# **************************
+# thresholded fitness scores
+# **************************
+
+# histograms of stop codon fitness values
+#perturb_stops = fitness_array[[data_sets['day1'],data_sets['day2']], aminotonumber['STOP'], :].flatten()
+#ctrl_stops = fitness_array[data_sets['ctrl'], aminotonumber['STOP'], :].flatten()
+#print np.median(perturb_stops)
+#print np.median(ctrl_stops)
+#compare_hist(perturb_stops, ctrl_stops)
+
+# average perturb data sets thresholded based on median stop codon value
+#avg_perturb = np.mean(fitness_array[[data_sets['day1'],data_sets['day2']],:,:], axis=0)
+#median_stop = np.median(fitness_array[[data_sets['day1'],data_sets['day2']], aminotonumber['STOP'], :].flatten())
+#print median_stop
+#plot_hmap(arbitrary_threshold(avg_perturb, median_stop)[1:,:], sequence_labels, mutation_labels[1:], cmap_='Greens')
+
+# control data set thresholded based on median stop codon value
+#ctrl = fitness_array[data_sets['ctrl'],:,:]
+#median_stop = np.median(fitness_array[data_sets['ctrl'], aminotonumber['STOP'], :].flatten())
+#print median_stop
+#plot_hmap(arbitrary_threshold(ctrl, median_stop)[1:,:], sequence_labels, mutation_labels[1:], cmap_='Greens')
+
+
+
+# **************************
+# ddg scores for ubi monomer
+# **************************
 
 # heatmap of ddg monomer data
-ddg_array = fitness_array[data_sets['ddg'],1:,:]
-print np.amin(ddg_array), np.amax(ddg_array)
-plt.hist(ddg_array.flatten(), bins=20)
-plt.show()
-#plot_hmap(ddg_array, sequence_labels, mutation_labels[1:], -10.0, 10.0)
+#ddg_array = fitness_array[data_sets['ddg'],1:,:]
+#print np.amin(ddg_array), np.amax(ddg_array)
+#plt.hist(ddg_array.flatten(), bins=20)
+#plt.show()
+#plot_hmap(ddg_array, sequence_labels, mutation_labels[1:], -20.0, 20.0, 'PuOr')
 
-# average of two experiments
-#avg_perturb = np.mean(fitness_array[2:4,:,:], axis=0)
-#plot_hmap(arbitrary_threshold(avg_perturb, -0.2), sequence_labels, mutation_labels)
 
-# fitness difference between experimental and control conditions
-#plot_hmap(np.mean(fitness_array[2:4,:,:], axis=0) - fitness_array[4,:,:],sequence_labels,mutation_labels)
 
-# control
-#plot_hmap(fitness_array[3,:,:],sequence_labels,mutation_labels)
+# ***************************************
+# generate sequence logo pssm input files
+# ***************************************
+
+# average perturb data sets thresholded based on median stop codon value
+#avg_perturb = np.mean(fitness_array[[data_sets['day1'],data_sets['day2']],:,:], axis=0)
+#median_stop = np.median(fitness_array[[data_sets['day1'],data_sets['day2']], aminotonumber['STOP'], :].flatten())
+#thresholded = arbitrary_threshold(avg_perturb, median_stop)
+#normalized = normalize_info_content(thresholded)
+#plot_hmap(normalized[1:,:], sequence_labels, mutation_labels[1:])
+#pssm_out(normalized[1:,:], sequence_labels, mutation_labels[1:], 'avg_perturb_norm', 'avg_perturb_norm.pssm.txt')
+
+# control data set thresholded based on median stop codon value
+ctrl = fitness_array[data_sets['ctrl'],:,:]
+median_stop = np.median(fitness_array[data_sets['ctrl'], aminotonumber['STOP'], :].flatten())
+thresholded = arbitrary_threshold(ctrl, median_stop)
+normalized = normalize_info_content(thresholded)
+plot_hmap(normalized[1:,:], sequence_labels, mutation_labels[1:])
+pssm_out(normalized[1:,:], sequence_labels, mutation_labels[1:], 'ctrl', 'ctrl_norm.pssm.txt')
+
+
 
 # mask which shows where we have no data
-#plot_hmap(fitness_array[0,:,:],sequence_labels,mutation_labels)
+#plot_hmap(fitness_array[data_sets['data?'],:,:],sequence_labels,mutation_labels)
 
 # mask which shows which positions are wt
 #plot_hmap(fitness_array[1,:,:],sequence_labels,mutation_labels)
-
-# try normalization
-#norm = normalize_info_content(normalize_to_mean_stop(np.mean(fitness_array[2:4,:,:], axis=0)))
-#plot_hmap(norm,sequence_labels,mutation_labels)
-
-#for index, val in np.ndenumerate(fitness_array[1,:,:]):
-#    if val == 1.:
-#        if fitness_array[0,index[0],index[1]] == 1.:
-#            print fitness_array[4,index[0],index[1]]
