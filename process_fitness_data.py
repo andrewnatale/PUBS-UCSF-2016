@@ -194,17 +194,21 @@ def pssm_out(data, sequence_labels, mutation_labels, identifier, out_file):
 #compare_hist(perturb_stops, ctrl_stops)
 
 # average perturb data sets thresholded based on median stop codon value
-#avg_perturb = np.mean(fitness_array[[data_sets['day1'],data_sets['day2']],:,:], axis=0)
-#median_stop = np.median(fitness_array[[data_sets['day1'],data_sets['day2']], aminotonumber['STOP'], :].flatten())
+avg_perturb = np.mean(fitness_array[[data_sets['day1'],data_sets['day2']],:,:], axis=0)
+median_stop_perturb = np.median(fitness_array[[data_sets['day1'],data_sets['day2']], aminotonumber['STOP'], :].flatten())
+rescale_perturb = rescale(arbitrary_threshold(avg_perturb, median_stop_perturb), -1.0*median_stop_perturb)
 #print median_stop
 #plot_hmap(rescale(arbitrary_threshold(avg_perturb, median_stop), -1.0*median_stop)[1:,:], sequence_labels, mutation_labels[1:], max_=2.5, cmap_='Greens')
 
 # control data set thresholded based on median stop codon value
 ctrl = fitness_array[data_sets['ctrl'],:,:]
-median_stop = np.median(fitness_array[data_sets['ctrl'], aminotonumber['STOP'], :].flatten())
+median_stop_ctrl = np.median(fitness_array[data_sets['ctrl'], aminotonumber['STOP'], :].flatten())
+rescale_ctrl = rescale(arbitrary_threshold(ctrl, median_stop_ctrl), -1.0*median_stop_ctrl)
 #print median_stop
-plot_hmap(rescale(arbitrary_threshold(ctrl, median_stop), -1.0*median_stop)[1:,:], sequence_labels, mutation_labels[1:], max_=2.5, cmap_='Greens')
+#plot_hmap(rescale(arbitrary_threshold(ctrl, median_stop), -1.0*median_stop)[1:,:], sequence_labels, mutation_labels[1:], max_=2.5, cmap_='Greens')
 
+# difference (perturbed - ctrl)
+plot_hmap((rescale_perturb-rescale_ctrl)[1:,:], sequence_labels, mutation_labels[1:])
 
 
 # **************************
