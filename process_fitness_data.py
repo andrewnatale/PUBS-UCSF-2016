@@ -33,6 +33,11 @@ aminotonumber = {'STOP': 0, 'W': 1,
                  'K': 18, 'D': 19,
                  'E': 20}
 
+# opposite dictionary for reverse lookups
+numbertoamino = {}
+for key, value in aminotonumber.iteritems():
+    numbertoamino[value] = key
+
 # 76 aa long ubqitin sequence
 ub_seq = 'MQIFVKTLTGKTITLEVESSDTIDNVKSKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG*'
 
@@ -105,32 +110,22 @@ def plot_hmap(data, row_labels, column_labels, min_=None, max_=None, cmap_=None)
     plt.xticks(rotation=90)
     plt.show()
 
-# takes a 2D array
-def threshold_to_mean_stop(fitness_array):
-    # get max stop codon values for this replicate
-    #max_stop = np.amax(fitness_array[aminotonumber['STOP'],:])
-    avg_stop = np.mean(fitness_array[aminotonumber['STOP'],:])
-    # shift everything by the max stop codon value
-    fitness_array = fitness_array - avg_stop
-    # neg values go to zero
-    fitness_array[fitness_array < 0] = 0
-    return fitness_array
-
-# takes a 2D array
-def threshold_to_max_stop(fitness_array):
-    # get max stop codon values for this replicate
-    max_stop = np.amax(fitness_array[aminotonumber['STOP'],:])
-    #avg_stop = np.mean(fitness_array[aminotonumber['STOP'],:])
-    # shift everything by the max stop codon value
-    fitness_array = fitness_array - max_stop
-    # neg values go to zero
-    fitness_array[fitness_array < 0] = 0
-    return fitness_array
-
 def arbitrary_threshold(fitness_array, threshold):
     fitness_array = fitness_array - threshold
     fitness_array[fitness_array < 0] = 0
     return fitness_array
+
+def rescale(fitness_array, scale_factor=None):
+    if not scale_factor:
+        # get avg wt
+        wt_sum = 0.0
+        wt_count = 0.0
+        for index, val in np.ndenumerate(fitness_array):
+            if ub_seq[index[1] + first_resi] == numbertoamino[index[0]]:
+                wt_sum += fitness_array[index]
+                wt_count += 1
+        scale_factor = wt_sum / wt_count
+    return fitness_array / scale_factor
 
 def normalize_info_content(fitness_array):
     # normalize each position independently
@@ -202,13 +197,13 @@ def pssm_out(data, sequence_labels, mutation_labels, identifier, out_file):
 #avg_perturb = np.mean(fitness_array[[data_sets['day1'],data_sets['day2']],:,:], axis=0)
 #median_stop = np.median(fitness_array[[data_sets['day1'],data_sets['day2']], aminotonumber['STOP'], :].flatten())
 #print median_stop
-#plot_hmap(arbitrary_threshold(avg_perturb, median_stop)[1:,:], sequence_labels, mutation_labels[1:], cmap_='Greens')
+#plot_hmap(rescale(arbitrary_threshold(avg_perturb, median_stop), -1.0*median_stop)[1:,:], sequence_labels, mutation_labels[1:], max_=2.5, cmap_='Greens')
 
 # control data set thresholded based on median stop codon value
-#ctrl = fitness_array[data_sets['ctrl'],:,:]
-#median_stop = np.median(fitness_array[data_sets['ctrl'], aminotonumber['STOP'], :].flatten())
+ctrl = fitness_array[data_sets['ctrl'],:,:]
+median_stop = np.median(fitness_array[data_sets['ctrl'], aminotonumber['STOP'], :].flatten())
 #print median_stop
-#plot_hmap(arbitrary_threshold(ctrl, median_stop)[1:,:], sequence_labels, mutation_labels[1:], cmap_='Greens')
+plot_hmap(rescale(arbitrary_threshold(ctrl, median_stop), -1.0*median_stop)[1:,:], sequence_labels, mutation_labels[1:], max_=2.5, cmap_='Greens')
 
 
 
@@ -238,12 +233,12 @@ def pssm_out(data, sequence_labels, mutation_labels, identifier, out_file):
 #pssm_out(normalized[1:,:], sequence_labels, mutation_labels[1:], 'avg_perturb_norm', 'avg_perturb_norm.pssm.txt')
 
 # control data set thresholded based on median stop codon value
-ctrl = fitness_array[data_sets['ctrl'],:,:]
-median_stop = np.median(fitness_array[data_sets['ctrl'], aminotonumber['STOP'], :].flatten())
-thresholded = arbitrary_threshold(ctrl, median_stop)
-normalized = normalize_info_content(thresholded)
-plot_hmap(normalized[1:,:], sequence_labels, mutation_labels[1:])
-pssm_out(normalized[1:,:], sequence_labels, mutation_labels[1:], 'ctrl', 'ctrl_norm.pssm.txt')
+#ctrl = fitness_array[data_sets['ctrl'],:,:]
+#median_stop = np.median(fitness_array[data_sets['ctrl'], aminotonumber['STOP'], :].flatten())
+#thresholded = arbitrary_threshold(ctrl, median_stop)
+#normalized = normalize_info_content(thresholded)
+#plot_hmap(normalized[1:,:], sequence_labels, mutation_labels[1:])
+#pssm_out(normalized[1:,:], sequence_labels, mutation_labels[1:], 'ctrl', 'ctrl_norm.pssm.txt')
 
 
 
