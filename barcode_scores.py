@@ -87,8 +87,6 @@ for barcode in data_set:
     component_slopes[codon_to_aa[allele_map[barcode]]].append(float(barcode_slopes[barcode][1]))
     component_slopes_ctrl[codon_to_aa[allele_map[barcode]]].append(float(barcode_slopes[barcode][2]))
 
-#for mutant in component_slopes:
-#    print mutant, component_slopes[mutant]
 
 pkl.dump(component_slopes, open("component_slopes.pkl", 'wb'))
 pkl.dump(component_slopes_ctrl, open("component_slopes_ctrl.pkl", 'wb'))
