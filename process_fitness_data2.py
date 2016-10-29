@@ -6,9 +6,11 @@ import pickle as pkl
 import sys
 from collections import Counter
 import pandas as pd
+from scipy import stats
+from statsmodels import robust
 #from plot_function import heatmap_function
 
-with open('fitness_scores_v2.pkl', 'rb') as fitness_scores_file:
+with open('fitness_scores_v4.pkl', 'rb') as fitness_scores_file:
     fitness_scores = pkl.load(fitness_scores_file)
 
 # load up ubiqitin monomer rosetta ddg data
@@ -75,7 +77,8 @@ for elem in fitness_scores:
 data_sets = {'day1':0,
              'day2':1,
              'ctrl':2,
-             'wt?':3}
+             'wt?':3,
+             'ddg_m':4}
 
 # compose data labels
 sequence_labels = []
@@ -95,7 +98,7 @@ def plot_hmap(data, row_labels, column_labels, min_=None, max_=None, cmap_=None)
     grid_kws = {"height_ratios": (.9, .05), "hspace": .2}
     f, (ax, cbar_ax) = plt.subplots(2, gridspec_kw=grid_kws)
     ax = sns.heatmap(data, ax=ax,
-                     linewidths=0.5,
+                     linewidths=0.2,
                      cmap=cmap_,
                      cbar_ax=cbar_ax,
                      cbar_kws={"orientation": "horizontal"},
@@ -166,27 +169,91 @@ def pssm_out(data, sequence_labels, mutation_labels, identifier, out_file):
         pssm_file.write('//\n')
 
 
+
 # break out avg experimental fitness and control fitness
-avg_exp = np.mean(fitness_array[[data_sets['day1'],data_sets['day2']],:,:], axis=0)
+#avg_exp = np.mean(fitness_array[[data_sets['day1'],data_sets['day2']],:,:], axis=0)
+day1_exp = fitness_array[data_sets['day1'],:,:]
+day2_exp = fitness_array[data_sets['day2'],:,:]
 ctrl = fitness_array[data_sets['ctrl'],:,:]
+
+# histogram of stops vs non_stops
+day1_scores = day1_exp[1:,:].flatten()[~np.isnan(day1_exp[1:,:].flatten())]
+day2_scores = day2_exp[1:,:].flatten()[~np.isnan(day2_exp[1:,:].flatten())]
+ctrl_scores = ctrl[1:,:].flatten()[~np.isnan(ctrl[1:,:].flatten())]
+day1_stops = day1_exp[0,:].flatten()[~np.isnan(day1_exp[0,:].flatten())]
+day2_stops = day2_exp[0,:].flatten()[~np.isnan(day2_exp[0,:].flatten())]
+ctrl_stops = ctrl[0,:].flatten()[~np.isnan(ctrl[0,:].flatten())]
+
+# scatter plot, day1 vs day2
+line = stats.linregress(day1_scores, day2_scores)
+slope, intercept, rvalue, pvalue, stderr = line
+print line
+fig, ax = plt.subplots()
+plt.scatter(day1_scores, day2_scores)
+xlim = ax.get_xlim()
+x = np.linspace(xlim[0], xlim[1], 100)
+best_fit_line = float(slope) * x + intercept
+plt.plot(x, best_fit_line)
+plt.show()
+
+# histogram of stops and non-stops
+non_stops = np.concatenate([day1_scores, day2_scores, ctrl_scores])
+stops = np.concatenate([day1_stops, day2_stops, ctrl_stops])
+plt.hist(stops, bins=50)
+plt.hist(non_stops, bins=50, alpha=0.5)
+plt.show()
+
 # get the median of all stop codon fitness values
-ctrl_stops = fitness_array[data_sets['ctrl'], aminotonumber['STOP'], :].flatten()
-ctrl_stops = ctrl_stops[~np.isnan(ctrl_stops)]
-median_stop_ctrl = np.median(ctrl_stops)
+median_stop = np.median(stops)
+stops_mad = robust.scale.mad(stops)
+
+thresh = float(median_stop) + float(stops_mad)
+
 # threshold exp and control data using median control stop codon
-exp_thresh = threshold(avg_exp, median_stop_ctrl)
-ctrl_thresh = threshold(ctrl, median_stop_ctrl)
+day1_thresh = threshold(day1_exp, thresh)
+day2_thresh = threshold(day2_exp, thresh)
+ctrl_thresh = threshold(ctrl, thresh)
 # rescale each so wt=1
-exp_thresh = rescale(exp_thresh, -1.0*median_stop_ctrl)
-ctrl_thresh = rescale(ctrl_thresh, -1.0*median_stop_ctrl)
+day1_rescale = rescale(day1_thresh, -1.0*thresh)
+day2_rescale = rescale(day2_thresh, -1.0*thresh)
+ctrl_rescale = rescale(ctrl_thresh, -1.0*thresh)
 
-difference_map = exp_thresh - ctrl_thresh
+average = (day1_rescale + day2_rescale) / 2
+difference_map = average - ctrl_rescale
 
-plot_hmap(exp_thresh,sequence_labels,mutation_labels, max_=2, cmap_='Greens')
-plot_hmap(ctrl_thresh,sequence_labels,mutation_labels, max_=2, cmap_='Greens')
+
+
+plot_hmap(day1_thresh,sequence_labels,mutation_labels)
+plot_hmap(day2_thresh,sequence_labels,mutation_labels)
+plot_hmap(average,sequence_labels,mutation_labels)
+plot_hmap(ctrl_thresh,sequence_labels,mutation_labels)
 plot_hmap(difference_map,sequence_labels,mutation_labels)
-#plt.imshow(exp_thresh, cmap='hot', interpolation='nearest')
-#plt.show()
+
+
+# empty array for z scores
+# z_scores = np.zeros((3,21,seq_length), dtype=np.double)
+# z_scores.fill(np.nan)
+# for index, val in np.ndenumerate(day1_exp):
+#     z_scores[0,index[0],index[1]] = (val - np.mean(day1_scores)) / np.std(day1_scores)
+# for index, val in np.ndenumerate(day2_exp):
+#     z_scores[1,index[0],index[1]] = (val - np.mean(day2_scores)) / np.std(day2_scores)
+# for index, val in np.ndenumerate(ctrl):
+#     z_scores[2,index[0],index[1]] = (val - np.mean(ctrl_scores)) / np.std(ctrl_scores)
+#
+# scatter_list = []
+# for index, val in np.ndenumerate(z_scores):
+#     if not math.isnan(val):
+#         scatter_list.append((float(index[2]+2), val, index[1], index[0]))
+# print scatter_list
+#
+#
+#
+# use_colors = {0: "red", 1: "green", 2: "blue"}
+# #print [use_colors[i[3]] for i in scatter_list]
+# plt.scatter([i[0] for i in scatter_list], [i[1] for i in scatter_list], color=[use_colors[i[3]] for i in scatter_list])
+# plt.show()
+
+
 
 # ******************
 # raw fitness scores
